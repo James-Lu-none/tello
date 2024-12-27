@@ -118,6 +118,7 @@ class TelloDrone(Tello):
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 else:
+                    self.control_speed = [0,0,0,0]
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
