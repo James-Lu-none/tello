@@ -8,7 +8,7 @@ import torch
 from PIL import Image
 import numpy as np
 import cv2
-
+from simple_pid import PID
 
 class TelloDrone(Tello):
     def __init__(self):
@@ -19,11 +19,17 @@ class TelloDrone(Tello):
         # load model
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
         self.lock_class_id = None
-        # keyboard control
+        # control
+        self.frame_x_center = 480
+        self.frame_y_center = 360
         self.control_speed = [0,0,0,0] 
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
         self.keyboard_thread.start()
-        
+        self.pid_fb = PID(1, 0.1, 0.05, setpoint=0)
+        self.pid_ud = PID(1, 0.1, 0.05, setpoint=0)
+        self.pid_yv = PID(1, 0.1, 0.05, setpoint=0)
+        self.target_width = 200
+
         # pose estimation
         self.mpDraw = mp.solutions.drawing_utils
         self.mpPose = mp.solutions.pose
@@ -82,6 +88,13 @@ class TelloDrone(Tello):
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             print(f"Right button clicked at ({x}, {y})")
+    
+    def adj_pose(self, x_center, y_center, width, height):
+        # self.control_speed[0]
+        self.control_speed[1] = int(self.pid_ud(y_center - self.frame_y_center))
+        self.control_speed[2] = int(self.pid_fb(width - self.target_width))
+        self.control_speed[3] = int(self.pid_yv(x_center - self.frame_x_center))
+        print(self.control_speed)
 
     def drone_frame(self):
         pTime = 0
@@ -97,13 +110,14 @@ class TelloDrone(Tello):
                 y2 = int(y_center + height / 2)
                 label = f"{results.names[int(class_id)]} {confidence:.2f}"
                 if(class_id == self.lock_class_id):
+                    self.adj_pose(x_center, y_center, width, height)
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 else:                    
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
-                print(f"Bounding Box: (x_center: {x_center}, y_center: {y_center}, width: {width}, height: {height})")
+                # print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
+                # print(f"Bounding Box: (x_center: {x_center}, y_center: {y_center}, width: {width}, height: {height})")
 
             cv2.imshow('Detection Result', image)
             # A argument "self" was added to mouse_callback function so parameter has to be None
