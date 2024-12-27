@@ -75,6 +75,14 @@ class TelloDrone(Tello):
             if keyboard.is_pressed("2") and self.rev_speed > 0:
                 self.rev_speed-=1
                 print(f"revolution speed: {self.rev_speed}")
+            
+            if keyboard.is_pressed("3") and self.target_width < 960:
+                self.target_width+=1
+                print(f"target width: {self.target_width}")
+            
+            if keyboard.is_pressed("4") and self.target_width > 0:
+                self.target_width-=1
+                print(f"target width: {self.target_width}")
                 
             # flip 
             if keyboard.is_pressed("j"): self.flip_left(); time.sleep(1)
