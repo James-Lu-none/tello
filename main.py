@@ -18,7 +18,7 @@ class TelloDrone(Tello):
 
         # load model
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
-        
+        self.lock_class_id = None
         # keyboard control
         self.control_speed = [0,0,0,0] 
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
@@ -69,29 +69,42 @@ class TelloDrone(Tello):
             elif keyboard.is_pressed("k"): self.flip_back(); time.sleep(1)
             
             time.sleep(0.05) 
-        
+    def mouse_callback(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            print(f"Left button clicked at ({x}, {y})")
+            # assumes that only each class will only have one object
+            for det in self.detections:
+                x_center, y_center, width, height, confidence, class_id = det
+                if abs(x-x_center) < width/2 and abs(y-y_center) < height/2:
+                    self.lock_class_id = class_id
+
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            print(f"Right button clicked at ({x}, {y})")
+
     def drone_frame(self):
         pTime = 0
         while True:
             image = self.cap.frame
             results = self.model(image)
-            detections = results.xywh[0].cpu().numpy()
-
-            # for det in detections:
-            # det= detections[0]
-            for det in detections:
+            self.detections = results.xywh[0].cpu().numpy()
+            for det in self.detections:
                 x_center, y_center, width, height, confidence, class_id = det
                 x1 = int(x_center - width / 2)
                 y1 = int(y_center - height / 2)
                 x2 = int(x_center + width / 2)
                 y2 = int(y_center + height / 2)
-                cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 label = f"{results.names[int(class_id)]} {confidence:.2f}"
-                cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                if(class_id == self.lock_class_id):
+                    cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                else:                    
+                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
                 print(f"Bounding Box: (x_center: {x_center}, y_center: {y_center}, width: {width}, height: {height})")
 
             cv2.imshow('Detection Result', image)
+            cv2.setMouseCallback('Detection Result', self.mouse_callback, param=None) 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
