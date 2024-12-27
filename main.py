@@ -69,6 +69,8 @@ class TelloDrone(Tello):
             elif keyboard.is_pressed("k"): self.flip_back(); time.sleep(1)
             
             time.sleep(0.05) 
+    
+    # "self" was added to the argument to obtain class attribute
     def mouse_callback(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             print(f"Left button clicked at ({x}, {y})")
@@ -104,6 +106,8 @@ class TelloDrone(Tello):
                 print(f"Bounding Box: (x_center: {x_center}, y_center: {y_center}, width: {width}, height: {height})")
 
             cv2.imshow('Detection Result', image)
+            # A argument "self" was added to mouse_callback function so parameter has to be None
+            # otherwise it will be count as a positional argument and cause TypeError
             cv2.setMouseCallback('Detection Result', self.mouse_callback, param=None) 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
