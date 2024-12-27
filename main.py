@@ -93,11 +93,11 @@ class TelloDrone(Tello):
                 self.rev_on = not self.rev_on
                 print("revolution on: ",self.rev_on)
 
-            # flip 
-            if keyboard.is_pressed("j"): self.flip_left(); time.sleep(1)
-            elif keyboard.is_pressed("l"): self.flip_right(); time.sleep(1)
-            elif keyboard.is_pressed("i"): self.flip_forward(); time.sleep(1)
-            elif keyboard.is_pressed("k"): self.flip_back(); time.sleep(1)
+            # # flip 
+            # if keyboard.is_pressed("j"): self.flip_left(); time.sleep(1)
+            # elif keyboard.is_pressed("l"): self.flip_right(); time.sleep(1)
+            # elif keyboard.is_pressed("i"): self.flip_forward(); time.sleep(1)
+            # elif keyboard.is_pressed("k"): self.flip_back(); time.sleep(1)
             
             time.sleep(0.05) 
     
