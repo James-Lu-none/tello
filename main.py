@@ -22,7 +22,8 @@ class TelloDrone(Tello):
         # control
         self.frame_x_center = 480
         self.frame_y_center = 360
-        self.control_speed = [0,0,0,0] 
+        self.control_speed = [0,0,0,0]
+        self.rev_speed = 0
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
         self.keyboard_thread.start()
         self.pid_fb = PID(0.3, 0.001, 0.05, setpoint=0)
@@ -67,7 +68,15 @@ class TelloDrone(Tello):
             
             # 起飛
             if keyboard.is_pressed("e"): self.takeoff()
+
+            if keyboard.is_pressed("1") and self.rev_speed < 100:
+                self.rev_speed+=1
+                print(f"revolution speed: {self.rev_speed}")
             
+            if keyboard.is_pressed("2") and self.rev_speed > 0:
+                self.rev_speed-=1
+                print(f"revolution speed: {self.rev_speed}")
+                
             # flip 
             if keyboard.is_pressed("j"): self.flip_left(); time.sleep(1)
             elif keyboard.is_pressed("l"): self.flip_right(); time.sleep(1)
@@ -90,10 +99,10 @@ class TelloDrone(Tello):
             print(f"Right button clicked at ({x}, {y})")
     
     def adj_pose(self, x_center, y_center, width, height):
-        # self.control_speed[0]
         ud_dif = y_center - self.frame_y_center
         fb_dif = width - self.target_width
         yv_dif = x_center - self.frame_x_center
+        self.control_speed[0] = self.rev_speed
         self.control_speed[1] = int(self.pid_ud(ud_dif))
         self.control_speed[2] = int(self.pid_fb(fb_dif))
         self.control_speed[3] = int(self.pid_yv(yv_dif))
