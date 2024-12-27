@@ -22,6 +22,8 @@ class TelloDrone(Tello):
         # control
         self.frame_center = (480, 360)
         self.control_speed = [0,0,0,0]
+        self.space_state = 0
+        self.rev_on = False
         self.rev_speed = 0
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
         self.keyboard_thread.start()
@@ -68,22 +70,29 @@ class TelloDrone(Tello):
             # 起飛
             if keyboard.is_pressed("e"): self.takeoff()
 
-            if keyboard.is_pressed("1") and self.rev_speed < 100:
-                self.rev_speed+=1
-                print(f"revolution speed: {self.rev_speed}")
-            
-            if keyboard.is_pressed("2") and self.rev_speed > 0:
+            if keyboard.is_pressed("1") and self.rev_speed > 0:
                 self.rev_speed-=1
-                print(f"revolution speed: {self.rev_speed}")
+                print("revolution speed: ", self.rev_speed)
             
-            if keyboard.is_pressed("3") and self.target_width < 960:
-                self.target_width+=1
-                print(f"target width: {self.target_width}")
+            if keyboard.is_pressed("2") and self.rev_speed < 100:
+                self.rev_speed+=1
+                print("revolution speed: ", self.rev_speed)
             
-            if keyboard.is_pressed("4") and self.target_width > 0:
+            if keyboard.is_pressed("3") and self.target_width > 0:
                 self.target_width-=1
-                print(f"target width: {self.target_width}")
-                
+                print("target width: ", self.target_width)
+            
+            if keyboard.is_pressed("4") and self.target_width < 960:
+                self.target_width+=1
+                print(f"target width: ", self.target_width)
+            
+            if keyboard.is_pressed("space") and self.space_state == 0:
+                self.space_state = 1
+            if not keyboard.is_pressed("space") and self.space_state == 1:
+                self.space_state = 0
+                self.rev_on = not self.rev_on
+                print("revolution on: ",self.rev_on)
+
             # flip 
             if keyboard.is_pressed("j"): self.flip_left(); time.sleep(1)
             elif keyboard.is_pressed("l"): self.flip_right(); time.sleep(1)
@@ -106,7 +115,8 @@ class TelloDrone(Tello):
             print(f"Right button clicked at ({x}, {y})")
     
     def adj_pose(self, ud_dif,fb_dif,yv_dif):
-        self.control_speed[0] = self.rev_speed
+        if(self.rev_on): self.control_speed[0] = self.rev_speed
+        else: self.control_speed[0] = 0
         self.control_speed[1] = int(self.pid_ud(ud_dif))
         self.control_speed[2] = int(self.pid_fb(fb_dif))
         self.control_speed[3] = int(self.pid_yv(yv_dif))
