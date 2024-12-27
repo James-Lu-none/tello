@@ -20,8 +20,7 @@ class TelloDrone(Tello):
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
         self.lock_class_id = None
         # control
-        self.frame_x_center = 480
-        self.frame_y_center = 360
+        self.frame_center = (480, 360)
         self.control_speed = [0,0,0,0]
         self.rev_speed = 0
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
@@ -98,10 +97,7 @@ class TelloDrone(Tello):
         elif event == cv2.EVENT_RBUTTONDOWN:
             print(f"Right button clicked at ({x}, {y})")
     
-    def adj_pose(self, x_center, y_center, width, height):
-        ud_dif = y_center - self.frame_y_center
-        fb_dif = width - self.target_width
-        yv_dif = x_center - self.frame_x_center
+    def adj_pose(self, ud_dif,fb_dif,yv_dif):
         self.control_speed[0] = self.rev_speed
         self.control_speed[1] = int(self.pid_ud(ud_dif))
         self.control_speed[2] = int(self.pid_fb(fb_dif))
@@ -123,7 +119,18 @@ class TelloDrone(Tello):
                 y2 = int(y_center + height / 2)
                 label = f"{results.names[int(class_id)]} {confidence:.2f}"
                 if(class_id == self.lock_class_id):
-                    self.adj_pose(x_center, y_center, width, height)
+                    ud_dif = y_center - self.frame_center[1]
+                    fb_dif = width - self.target_width
+                    yv_dif = x_center - self.frame_center[0]
+                    self.adj_pose(ud_dif, fb_dif, yv_dif)
+                    if(self.control_speed[2]>0):
+                        cv2.circle(image, self.frame_center, self.control_speed[2], (0, 255, 255), 2)
+                    else:
+                        cv2.circle(image, self.frame_center, self.control_speed[2]*-1, (0, 0, 255), 2)
+                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0],self.frame_center[1]-self.control_speed[1]), (0, 255, 255), 2)
+                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0]-self.control_speed[3],self.frame_center[1]), (0, 255, 255), 2)
+
+                    cv2.circle(image, (int(x_center), int(y_center)), 2, (255, 0, 0), 2)
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 else:
@@ -132,7 +139,7 @@ class TelloDrone(Tello):
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
                 # print(f"Bounding Box: (x_center: {x_center}, y_center: {y_center}, width: {width}, height: {height})")
-
+            cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
             cv2.imshow('Detection Result', image)
             # A argument "self" was added to mouse_callback function so parameter has to be None
             # otherwise it will be count as a positional argument and cause TypeError
