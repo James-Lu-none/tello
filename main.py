@@ -91,9 +91,13 @@ class TelloDrone(Tello):
     
     def adj_pose(self, x_center, y_center, width, height):
         # self.control_speed[0]
-        self.control_speed[1] = int(self.pid_ud(y_center - self.frame_y_center))
-        self.control_speed[2] = int(self.pid_fb(width - self.target_width))
-        self.control_speed[3] = int(self.pid_yv(x_center - self.frame_x_center))
+        ud_dif = y_center - self.frame_y_center
+        fb_dif = width - self.target_width
+        yv_dif = x_center - self.frame_x_center
+        self.control_speed[1] = int(self.pid_ud(ud_dif))
+        self.control_speed[2] = int(self.pid_fb(fb_dif))
+        self.control_speed[3] = int(self.pid_yv(yv_dif))
+        print(ud_dif,fb_dif,yv_dif)
         print(self.control_speed)
 
     def drone_frame(self):
@@ -113,7 +117,7 @@ class TelloDrone(Tello):
                     self.adj_pose(x_center, y_center, width, height)
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                else:                    
+                else:
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
