@@ -21,7 +21,10 @@ class TelloDrone(Tello):
         self.lock_class_id = None
         # control
         self.frame_center = (480, 360)
-        self.control_speed = [0,0,0,0]
+        self.lr = 0
+        self.fb = 0
+        self.ud = 0
+        self.yv = 0
         self.space_state = 0
         self.rev_on = False
         self.rev_speed = 0
@@ -46,23 +49,23 @@ class TelloDrone(Tello):
     def getKeyboardInput(self):
 
         while True:
-            self.control_speed = [0,0,0,0]
+            self.lr, self.fb, self.ud, self.yv = 0,0,0,0
             speed = 50
             # 左右
-            if keyboard.is_pressed("LEFT"): self.control_speed[0]=-speed
-            elif keyboard.is_pressed("RIGHT"): self.control_speed[0]= speed
+            if keyboard.is_pressed("LEFT"): self.lr = -speed
+            elif keyboard.is_pressed("RIGHT"): self.lr = speed
             
             # 前後
-            if keyboard.is_pressed("UP"): self.control_speed[1]= speed
-            elif keyboard.is_pressed("DOWN"): self.control_speed[1]=-speed
+            if keyboard.is_pressed("UP"): self.fb = speed
+            elif keyboard.is_pressed("DOWN"): self.fb = -speed
             
             # 上下
-            if keyboard.is_pressed("w"): self.control_speed[2]= speed
-            elif keyboard.is_pressed("s"): self.control_speed[2]=-speed
+            if keyboard.is_pressed("w"): self.ud = speed
+            elif keyboard.is_pressed("s"): self.ud = -speed
             
             # 旋轉
-            if keyboard.is_pressed("a"): self.control_speed[3]=-speed
-            elif keyboard.is_pressed("d"): self.control_speed[3]= speed
+            if keyboard.is_pressed("a"): self.yv = -speed
+            elif keyboard.is_pressed("d"): self.yv = speed
             
             # 降落
             if keyboard.is_pressed("q"): self.land(); time.sleep(3) 
@@ -115,13 +118,13 @@ class TelloDrone(Tello):
             print(f"Right button clicked at ({x}, {y})")
     
     def adj_pose(self, ud_dif,fb_dif,yv_dif):
-        if(self.rev_on): self.control_speed[0] = self.rev_speed
-        else: self.control_speed[0] = 0
-        self.control_speed[1] = int(self.pid_ud(ud_dif))
-        self.control_speed[2] = int(self.pid_fb(fb_dif))
-        self.control_speed[3] = int(self.pid_yv(yv_dif))
+        if(self.rev_on): self.lr = self.rev_speed
+        else: self.lr = 0
+        self.fb = int(self.pid_fb(fb_dif))
+        self.ud = int(self.pid_ud(ud_dif))
+        self.yv = int(self.pid_yv(yv_dif))
         print(ud_dif,fb_dif,yv_dif)
-        print(self.control_speed)
+        print(self.lr, self.fb, self.ud, self.yv)
 
     def drone_frame(self):
         pTime = 0
@@ -141,18 +144,18 @@ class TelloDrone(Tello):
                     fb_dif = width - self.target_width
                     yv_dif = x_center - self.frame_center[0]
                     self.adj_pose(ud_dif, fb_dif, yv_dif)
-                    if(self.control_speed[2]>0):
-                        cv2.circle(image, self.frame_center, self.control_speed[2], (0, 255, 255), 2)
+                    if(self.fb>0):
+                        cv2.circle(image, self.frame_center, self.fb, (0, 255, 255), 2)
                     else:
-                        cv2.circle(image, self.frame_center, self.control_speed[2]*-1, (0, 0, 255), 2)
-                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0],self.frame_center[1]-self.control_speed[1]), (0, 255, 255), 2)
-                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0]-self.control_speed[3],self.frame_center[1]), (0, 255, 255), 2)
+                        cv2.circle(image, self.frame_center, self.fb*-1, (0, 0, 255), 2)
+                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0],self.frame_center[1]-self.ud), (0, 255, 255), 2)
+                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0]-self.yv,self.frame_center[1]), (0, 255, 255), 2)
 
                     cv2.circle(image, (int(x_center), int(y_center)), 2, (255, 0, 0), 2)
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 else:
-                    self.control_speed = [0,0,0,0]
+                    self.lr, self.fb, self.ud, self.yv = 0,0,0,0
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
@@ -160,7 +163,7 @@ class TelloDrone(Tello):
             cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
             cv2.imshow('Detection Result', image)
 
-            self.send_rc_control(self.control_speed[0],self.control_speed[1],self.control_speed[2],self.control_speed[3])
+            self.send_rc_control(self.lr, self.fb, self.ud, self.yv)
             # A argument "self" was added to mouse_callback function so parameter has to be None
             # otherwise it will be count as a positional argument and cause TypeError
             cv2.setMouseCallback('Detection Result', self.mouse_callback, param=None) 
