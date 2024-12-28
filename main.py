@@ -159,6 +159,8 @@ class TelloDrone(Tello):
                 # print(f"Bounding Box: (x_center: {x_center}, y_center: {y_center}, width: {width}, height: {height})")
             cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
             cv2.imshow('Detection Result', image)
+
+            self.send_rc_control(self.control_speed[0],self.control_speed[1],self.control_speed[2],self.control_speed[3])
             # A argument "self" was added to mouse_callback function so parameter has to be None
             # otherwise it will be count as a positional argument and cause TypeError
             cv2.setMouseCallback('Detection Result', self.mouse_callback, param=None) 
