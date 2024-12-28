@@ -30,10 +30,10 @@ class TelloDrone(Tello):
         self.rev_speed = 0
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
         self.keyboard_thread.start()
-        self.pid_fb = PID(0.3, 0.001, 0.05, setpoint=0)
-        self.pid_ud = PID(0.3, 0.001, 0.05, setpoint=0)
-        self.pid_yv = PID(0.3, 0.001, 0.05, setpoint=0)
-        self.target_width = 200
+        self.pid_fb = PID(0.1, 0.001, 0.05, setpoint=0)
+        self.pid_ud = PID(0.1, 0.001, 0.05, setpoint=0)
+        self.pid_yv = PID(0.1, 0.001, 0.05, setpoint=0)
+        self.target_width = 400
 
         # pose estimation
         self.mpDraw = mp.solutions.drawing_utils
@@ -88,7 +88,10 @@ class TelloDrone(Tello):
             if keyboard.is_pressed("4") and self.target_width < 960:
                 self.target_width+=1
                 print(f"target width: ", self.target_width)
-            
+
+            if keyboard.is_pressed("z"):
+                self.lock_class_id = None
+
             if keyboard.is_pressed("space") and self.space_state == 0:
                 self.space_state = 1
             if not keyboard.is_pressed("space") and self.space_state == 1:
@@ -122,7 +125,7 @@ class TelloDrone(Tello):
         else: self.lr = 0
         self.fb = int(self.pid_fb(fb_dif))
         self.ud = int(self.pid_ud(ud_dif))
-        self.yv = int(self.pid_yv(yv_dif))
+        self.yv = -int(self.pid_yv(yv_dif))
         print(ud_dif,fb_dif,yv_dif)
         print(self.lr, self.fb, self.ud, self.yv)
 
@@ -155,7 +158,7 @@ class TelloDrone(Tello):
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 else:
-                    self.lr, self.fb, self.ud, self.yv = 0,0,0,0
+                    # self.lr, self.fb, self.ud, self.yv = 0,0,0,0
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
