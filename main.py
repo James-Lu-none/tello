@@ -20,6 +20,7 @@ class TelloDrone(Tello):
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
         self.lock_class_id = None
         # control
+        self.limit = 70
         self.frame_center = (480, 360)
         self.lr = 0
         self.fb = 0
@@ -32,8 +33,8 @@ class TelloDrone(Tello):
         self.keyboard_thread.start()
         self.pid_fb = PID(0.1, 0.001, 0.05, setpoint=0)
         self.pid_ud = PID(0.1, 0.001, 0.05, setpoint=0)
-        self.pid_yv = PID(0.1, 0.001, 0.05, setpoint=0)
-        self.target_width = 400
+        self.pid_yv = PID(0.11, 0.001, 0.05, setpoint=0)
+        self.target_width = 100
 
         # pose estimation
         self.mpDraw = mp.solutions.drawing_utils
@@ -51,26 +52,20 @@ class TelloDrone(Tello):
         while True:
             self.lr, self.fb, self.ud, self.yv = 0,0,0,0
             speed = 50
-            # 左右
             if keyboard.is_pressed("LEFT"): self.lr = -speed
             elif keyboard.is_pressed("RIGHT"): self.lr = speed
-            
-            # 前後
+
             if keyboard.is_pressed("UP"): self.fb = speed
             elif keyboard.is_pressed("DOWN"): self.fb = -speed
             
-            # 上下
             if keyboard.is_pressed("w"): self.ud = speed
             elif keyboard.is_pressed("s"): self.ud = -speed
-            
-            # 旋轉
+ 
             if keyboard.is_pressed("a"): self.yv = -speed
             elif keyboard.is_pressed("d"): self.yv = speed
             
-            # 降落
             if keyboard.is_pressed("q"): self.land(); time.sleep(3) 
             
-            # 起飛
             if keyboard.is_pressed("e"): self.takeoff()
 
             if keyboard.is_pressed("1") and self.rev_speed > 0:
@@ -126,8 +121,8 @@ class TelloDrone(Tello):
         self.yv = -int(self.pid_yv(yv_dif))
         
         for val in [self.lr, self.fb, self.ud, self.yv]:
-            if val > 100: val = 100
-            elif val < -100: val = -100
+            if val > self.limit: val = self.limit
+            elif val < -self.limit: val = -self.limit
 
         print(ud_dif,fb_dif,yv_dif)
         print(self.lr, self.fb, self.ud, self.yv)
@@ -155,7 +150,7 @@ class TelloDrone(Tello):
                     else:
                         cv2.circle(image, self.frame_center, self.fb*-1, (0, 0, 255), 2)
                     cv2.arrowedLine(image, self.frame_center, (self.frame_center[0],self.frame_center[1]-self.ud), (0, 255, 255), 2)
-                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0]-self.yv,self.frame_center[1]), (0, 255, 255), 2)
+                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0]+self.yv,self.frame_center[1]), (0, 255, 255), 2)
 
                     cv2.circle(image, (int(x_center), int(y_center)), 2, (255, 0, 0), 2)
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
