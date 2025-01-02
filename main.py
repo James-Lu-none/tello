@@ -31,7 +31,7 @@ class TelloDrone(Tello):
         self.rev_speed = 0
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
         self.keyboard_thread.start()
-        self.pid_fb = PID(0.1, 0.001, 0.05, setpoint=0)
+        self.pid_fb = PID(0.105, 0.001, 0.05, setpoint=0)
         self.pid_ud = PID(0.1, 0.001, 0.05, setpoint=0)
         self.pid_yv = PID(0.11, 0.001, 0.05, setpoint=0)
         self.target_width = 100
