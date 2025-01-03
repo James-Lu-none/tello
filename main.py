@@ -19,7 +19,7 @@ class TelloDrone(Tello):
         print("battery: ",self.get_battery())
 
         # load model
-        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', device='cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', device='cuda:0' if torch.cuda.is_available() else 'cpu')
         self.lock_class_id = None
         # control
         self.limit = 70
