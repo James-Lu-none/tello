@@ -42,10 +42,10 @@ class TelloDrone(Tello):
         self.setting_file_path = os.path.join(current_time, "settings.txt")
         self.log_file_path = os.path.join(current_time, "log.txt")
         with open(self.setting_file_path, "w") as log_file:
-            log_file.write(self.pid_fb,"\n")
-            log_file.write(self.pid_ud,"\n")
-            log_file.write(self.pid_yv,"\n")
-            log_file.write(self.limit,"\n")
+            log_file.write(str(self.pid_fb) + "\n")
+            log_file.write(str(self.pid_ud) + "\n")
+            log_file.write(str(self.pid_yv) + "\n")
+            log_file.write(str(self.limit) + "\n")
 
         # pose estimation
         self.mpDraw = mp.solutions.drawing_utils
@@ -141,7 +141,7 @@ class TelloDrone(Tello):
     def drone_frame(self):
         pTime = 0
         while True:
-            pTime = time.time()
+            pTime = round(time.time(), 3)
             image = self.cap.frame
             results = self.model(image)
             self.detections = results.xywh[0].cpu().numpy()
@@ -168,8 +168,8 @@ class TelloDrone(Tello):
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
-                    with open(self.log_file_path, "w") as log_file:
-                        log_file.write(f"Time: {pTime}: {x_center}, {y_center}, {width}, {height}, {self.target_width}, {self.lr}, {self.fb}, {self.ud}, {self.yv}\n")
+                    with open(self.log_file_path, "a") as log_file:
+                        log_file.write(f"Time: {pTime};{str([x_center, y_center, width, height])};{str([ud_dif, fb_dif, yv_dif])};{str([self.lr, self.fb, self.ud, self.yv])}\n")
                 else:
                     # self.lr, self.fb, self.ud, self.yv = 0,0,0,0
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
