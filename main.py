@@ -174,10 +174,10 @@ class TelloDrone(Tello):
 
                     with open(self.log_file_path, "a") as log_file:
                         log_file.write(
-                            f"Time: {pTime};bat: {str(self.get_battery())};
+                            f'''Time: {pTime};bat: {str(self.get_battery())};
                             {str([float(x_center), float(y_center), float(width), float(height)])};
                             {str([float(ud_dif), float(fb_dif), float(yv_dif)])};
-                            {str([self.lr, self.fb, self.ud, self.yv])}\n")
+                            {str([self.lr, self.fb, self.ud, self.yv])}\n''')
                 else:
                     # self.lr, self.fb, self.ud, self.yv = 0,0,0,0
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
