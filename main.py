@@ -139,9 +139,6 @@ class TelloDrone(Tello):
             if val > self.limit: val = self.limit
             elif val < -self.limit: val = -self.limit
 
-        print(ud_dif,fb_dif,yv_dif)
-        print(self.lr, self.fb, self.ud, self.yv)
-
     def drone_frame(self):
         pTime = 0
         while True:
@@ -196,8 +193,6 @@ class TelloDrone(Tello):
                     # self.lr, self.fb, self.ud, self.yv = 0,0,0,0
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                # print(f"Detected: {results.names[int(class_id)]} with confidence {confidence:.2f}")
-                # print(f"Bounding Box: (x_center: {x_center}, y_center: {y_center}, width: {width}, height: {height})")
             cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
             cv2.imshow('Detection Result', image)
 
