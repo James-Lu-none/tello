@@ -11,13 +11,17 @@ import cv2
 from simple_pid import PID
 from datetime import datetime
 import os
-
+import logging
+import warnings
 class TelloDrone(Tello):
     def __init__(self):
         Tello.__init__(self)
         self.connect()
         print("battery: ",self.get_battery())
-
+        # ignore warngings
+        logging.getLogger('djitellopy').setLevel(logging.ERROR)
+        logging.getLogger('torch').setLevel(logging.ERROR)
+        warnings.filterwarnings("ignore", "category=FutureWarning", message=".*deprecated.*")
         # load model
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', device='cuda:0' if torch.cuda.is_available() else 'cpu')
         self.lock_class_id = None
