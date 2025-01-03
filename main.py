@@ -126,6 +126,11 @@ class TelloDrone(Tello):
         self.fb = int(self.pid_fb(fb_dif))
         self.ud = int(self.pid_ud(ud_dif))
         self.yv = -int(self.pid_yv(yv_dif))
+        
+        for val in [self.lr, self.fb, self.ud, self.yv]:
+            if val > 100: val = 100
+            elif val < -100: val = -100
+
         print(ud_dif,fb_dif,yv_dif)
         print(self.lr, self.fb, self.ud, self.yv)
 
