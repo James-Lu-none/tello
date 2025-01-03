@@ -89,9 +89,6 @@ class TelloDrone(Tello):
                 self.target_width+=1
                 print(f"target width: ", self.target_width)
 
-            if keyboard.is_pressed("z"):
-                self.lock_class_id = None
-
             if keyboard.is_pressed("space") and self.space_state == 0:
                 self.space_state = 1
             if not keyboard.is_pressed("space") and self.space_state == 1:
@@ -118,6 +115,7 @@ class TelloDrone(Tello):
                     self.lock_class_id = class_id
 
         elif event == cv2.EVENT_RBUTTONDOWN:
+            self.lock_class_id = None
             print(f"Right button clicked at ({x}, {y})")
     
     def adj_pose(self, ud_dif,fb_dif,yv_dif):
