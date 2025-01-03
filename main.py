@@ -63,7 +63,7 @@ class TelloDrone(Tello):
         
 
     def getKeyboardInput(self):
-
+        step = 5
         while True:
             self.lr, self.fb, self.ud, self.yv = 0,0,0,0
             speed = 50
@@ -84,19 +84,19 @@ class TelloDrone(Tello):
             if keyboard.is_pressed("e"): self.takeoff()
 
             if keyboard.is_pressed("1") and self.rev_speed > 0:
-                self.rev_speed-=1
+                self.rev_speed-=step
                 print("revolution speed: ", self.rev_speed)
             
             if keyboard.is_pressed("2") and self.rev_speed < 100:
-                self.rev_speed+=1
+                self.rev_speed+=step
                 print("revolution speed: ", self.rev_speed)
             
             if keyboard.is_pressed("3") and self.target_width > 0:
-                self.target_width-=1
+                self.target_width-=step
                 print("target width: ", self.target_width)
             
             if keyboard.is_pressed("4") and self.target_width < 960:
-                self.target_width+=1
+                self.target_width+=step
                 print(f"target width: ", self.target_width)
 
             if keyboard.is_pressed("space") and self.space_state == 0:
