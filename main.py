@@ -9,6 +9,8 @@ from PIL import Image
 import numpy as np
 import cv2
 from simple_pid import PID
+from datetime import datetime
+import os
 
 class TelloDrone(Tello):
     def __init__(self):
@@ -35,6 +37,15 @@ class TelloDrone(Tello):
         self.pid_ud = PID(0.1, 0.001, 0.05, setpoint=0)
         self.pid_yv = PID(0.11, 0.001, 0.05, setpoint=0)
         self.target_width = 100
+        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        os.makedirs(current_time)
+        self.setting_file_path = os.path.join(current_time, "settings.txt")
+        self.log_file_path = os.path.join(current_time, "log.txt")
+        with open(self.setting_file_path, "w") as log_file:
+            log_file.write(self.pid_fb,"\n")
+            log_file.write(self.pid_ud,"\n")
+            log_file.write(self.pid_yv,"\n")
+            log_file.write(self.limit,"\n")
 
         # pose estimation
         self.mpDraw = mp.solutions.drawing_utils
@@ -130,6 +141,7 @@ class TelloDrone(Tello):
     def drone_frame(self):
         pTime = 0
         while True:
+            pTime = time.time()
             image = self.cap.frame
             results = self.model(image)
             self.detections = results.xywh[0].cpu().numpy()
@@ -155,6 +167,9 @@ class TelloDrone(Tello):
                     cv2.circle(image, (int(x_center), int(y_center)), 2, (255, 0, 0), 2)
                     cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                     cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+                    with open(self.log_file_path, "w") as log_file:
+                        log_file.write(f"Time: {pTime}: {x_center}, {y_center}, {width}, {height}, {self.target_width}, {self.lr}, {self.fb}, {self.ud}, {self.yv}\n")
                 else:
                     # self.lr, self.fb, self.ud, self.yv = 0,0,0,0
                     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
