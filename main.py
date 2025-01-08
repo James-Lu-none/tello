@@ -40,7 +40,8 @@ class TelloDrone(Tello):
         self.pid_fb = PID(0.105, 0.001, 0.05, setpoint=0)
         self.pid_ud = PID(0.1, 0.001, 0.05, setpoint=0)
         self.pid_yv = PID(0.11, 0.001, 0.05, setpoint=0)
-        self.target_width = 100
+        self.update_width_flag = False
+        self.target_width = 0
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         os.makedirs(current_time)
         self.setting_file_path = os.path.join(current_time, "settings.txt")
@@ -61,7 +62,6 @@ class TelloDrone(Tello):
         self.cap = self.get_frame_read()
         self.drone_frame()
         
-
     def getKeyboardInput(self):
         step = 5
         while True:
@@ -70,8 +70,13 @@ class TelloDrone(Tello):
             if keyboard.is_pressed("LEFT"): self.lr = -speed
             elif keyboard.is_pressed("RIGHT"): self.lr = speed
 
-            if keyboard.is_pressed("UP"): self.fb = speed
-            elif keyboard.is_pressed("DOWN"): self.fb = -speed
+            if keyboard.is_pressed("UP"): 
+                self.fb = speed
+                self.update_width_flag = True
+                
+            elif keyboard.is_pressed("DOWN"): 
+                self.fb = -speed
+                self.update_width_flag = True
             
             if keyboard.is_pressed("w"): self.ud = speed
             elif keyboard.is_pressed("s"): self.ud = -speed
@@ -91,14 +96,6 @@ class TelloDrone(Tello):
                 self.rev_speed+=step
                 print("revolution speed: ", self.rev_speed)
             
-            if keyboard.is_pressed("3") and self.target_width > 0:
-                self.target_width-=step
-                print("target width: ", self.target_width)
-            
-            if keyboard.is_pressed("4") and self.target_width < 960:
-                self.target_width+=step
-                print(f"target width: ", self.target_width)
-
             if keyboard.is_pressed("space") and self.space_state == 0:
                 self.space_state = 1
             if not keyboard.is_pressed("space") and self.space_state == 1:
@@ -123,11 +120,12 @@ class TelloDrone(Tello):
                 x_center, y_center, width, height, confidence, class_id = det
                 if abs(x-x_center) < width/2 and abs(y-y_center) < height/2:
                     self.lock_class_id = class_id
+                    self.target_width = width
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             self.lock_class_id = None
             print(f"Right button clicked at ({x}, {y})")
-    
+
     def adj_pose(self, ud_dif,fb_dif,yv_dif):
         if(self.rev_on): self.lr = self.rev_speed
         else: self.lr = 0
@@ -154,6 +152,9 @@ class TelloDrone(Tello):
                 y2 = int(y_center + height / 2)
                 label = f"{results.names[int(class_id)]} {confidence:.2f}"
                 if(class_id == self.lock_class_id):
+                    if(self.update_width_flag):
+                        self.update_width_flag = False
+                        self.target_width = width
                     ud_dif = y_center - self.frame_center[1]
                     fb_dif = width - self.target_width
                     yv_dif = x_center - self.frame_center[0]
