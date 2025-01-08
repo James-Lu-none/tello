@@ -83,7 +83,7 @@ class TelloDrone(Tello):
             
             if keyboard.is_pressed("e"): self.takeoff()
 
-            if keyboard.is_pressed("1") and self.rev_speed > 0:
+            if keyboard.is_pressed("1") and self.rev_speed > -100:
                 self.rev_speed-=step
                 print("revolution speed: ", self.rev_speed)
             
