@@ -84,7 +84,9 @@ class TelloDrone(Tello):
             if keyboard.is_pressed("a"): self.yv = -speed
             elif keyboard.is_pressed("d"): self.yv = speed
             
-            if keyboard.is_pressed("q"): self.land(); time.sleep(3) 
+            if keyboard.is_pressed("q"): 
+                self.land()
+                break
             
             if keyboard.is_pressed("e"): self.takeoff()
 
