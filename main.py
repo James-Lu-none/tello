@@ -150,66 +150,65 @@ class TelloDrone(Tello):
     def drone_frame(self):
         pTime = 0
         while True:
-            if self.manual_flag: 
-                continue
-            
-            pTime = round(time.time(), 3)
             image = self.cap.frame
             results = self.model(image)
-            self.detections = results.xywh[0].cpu().numpy()
-            for det in self.detections:
-                x_center, y_center, width, height, confidence, class_id = det
-                x1 = int(x_center - width / 2)
-                y1 = int(y_center - height / 2)
-                x2 = int(x_center + width / 2)
-                y2 = int(y_center + height / 2)
-                label = f"{results.names[int(class_id)]} {confidence:.2f}"
-                if(class_id == self.lock_class_id):
-                    if(self.update_width_flag):
-                        self.update_width_flag = False
-                        self.target_width = width
-                    ud_dif = y_center - self.frame_center[1]
-                    fb_dif = width - self.target_width
-                    yv_dif = x_center - self.frame_center[0]
-                    self.adj_pose(ud_dif, fb_dif, yv_dif)
-                    if(self.fb>0):
-                        cv2.circle(image, self.frame_center, self.fb, (0, 255, 255), 2)
+            if not self.manual_flag:
+                pTime = round(time.time(), 3)
+                
+                self.detections = results.xywh[0].cpu().numpy()
+                for det in self.detections:
+                    x_center, y_center, width, height, confidence, class_id = det
+                    x1 = int(x_center - width / 2)
+                    y1 = int(y_center - height / 2)
+                    x2 = int(x_center + width / 2)
+                    y2 = int(y_center + height / 2)
+                    label = f"{results.names[int(class_id)]} {confidence:.2f}"
+                    if(class_id == self.lock_class_id):
+                        if(self.update_width_flag):
+                            self.update_width_flag = False
+                            self.target_width = width
+                        ud_dif = y_center - self.frame_center[1]
+                        fb_dif = width - self.target_width
+                        yv_dif = x_center - self.frame_center[0]
+                        self.adj_pose(ud_dif, fb_dif, yv_dif)
+                        if(self.fb>0):
+                            cv2.circle(image, self.frame_center, self.fb, (0, 255, 255), 2)
+                        else:
+                            cv2.circle(image, self.frame_center, self.fb*-1, (0, 0, 255), 2)
+                        cv2.arrowedLine(image, self.frame_center, (self.frame_center[0],self.frame_center[1]-self.ud), (0, 255, 255), 2)
+                        cv2.arrowedLine(image, self.frame_center, (self.frame_center[0]+self.yv,self.frame_center[1]), (0, 255, 255), 2)
+
+                        cv2.circle(image, (int(x_center), int(y_center)), 2, (255, 0, 0), 2)
+                        cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                        cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                        
+                        bounding_box = [
+                            round(float(x_center), 3),
+                            round(float(y_center), 3),
+                            round(float(width), 3),
+                            round(float(height), 3)
+                        ]
+                        differences = [
+                            round(float(ud_dif), 3),
+                            round(float(fb_dif), 3),
+                            round(float(yv_dif), 3)
+                        ]
+                        with open(self.log_file_path, "a") as log_file:
+                            log_message = (
+                                f"Time: {pTime};"
+                                f"bat: {str(self.get_battery())};"
+                                f"{str(bounding_box)};"
+                                f"{str(differences)};"
+                                f"{str([self.lr, self.fb, self.ud, self.yv])}\n"
+                            )
+                            log_file.write(log_message)
                     else:
-                        cv2.circle(image, self.frame_center, self.fb*-1, (0, 0, 255), 2)
-                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0],self.frame_center[1]-self.ud), (0, 255, 255), 2)
-                    cv2.arrowedLine(image, self.frame_center, (self.frame_center[0]+self.yv,self.frame_center[1]), (0, 255, 255), 2)
-
-                    cv2.circle(image, (int(x_center), int(y_center)), 2, (255, 0, 0), 2)
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
-                    cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                    
-                    bounding_box = [
-                        round(float(x_center), 3),
-                        round(float(y_center), 3),
-                        round(float(width), 3),
-                        round(float(height), 3)
-                    ]
-                    differences = [
-                        round(float(ud_dif), 3),
-                        round(float(fb_dif), 3),
-                        round(float(yv_dif), 3)
-                    ]
-                    with open(self.log_file_path, "a") as log_file:
-                        log_message = (
-                            f"Time: {pTime};"
-                            f"bat: {str(self.get_battery())};"
-                            f"{str(bounding_box)};"
-                            f"{str(differences)};"
-                            f"{str([self.lr, self.fb, self.ud, self.yv])}\n"
-                        )
-                        log_file.write(log_message)
-                else:
-                    # self.lr, self.fb, self.ud, self.yv = 0,0,0,0
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
+                        # self.lr, self.fb, self.ud, self.yv = 0,0,0,0
+                        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
+            
             cv2.imshow('Detection Result', image)
-
             self.send_rc_control(self.lr, self.fb, self.ud, self.yv)
             # A argument "self" was added to mouse_callback function so parameter has to be None
             # otherwise it will be count as a positional argument and cause TypeError
