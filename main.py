@@ -111,6 +111,8 @@ class TelloDrone(Tello):
             for val in [self.lr, self.fb, self.ud, self.yv]:
                 if val != 0:
                     self.manual_flag = True
+                    self.rev_on = False
+                    print("revolution on: ",self.rev_on)
                     break
 
             # # flip 
