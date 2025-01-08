@@ -40,6 +40,7 @@ class TelloDrone(Tello):
         self.pid_fb = PID(0.105, 0.001, 0.05, setpoint=0)
         self.pid_ud = PID(0.1, 0.001, 0.05, setpoint=0)
         self.pid_yv = PID(0.11, 0.001, 0.05, setpoint=0)
+        self.manual_flag = False
         self.update_width_flag = False
         self.target_width = 0
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -64,9 +65,10 @@ class TelloDrone(Tello):
         
     def getKeyboardInput(self):
         step = 5
+        speed = 50
         while True:
             self.lr, self.fb, self.ud, self.yv = 0,0,0,0
-            speed = 50
+            
             if keyboard.is_pressed("LEFT"): self.lr = -speed
             elif keyboard.is_pressed("RIGHT"): self.lr = speed
 
@@ -105,6 +107,12 @@ class TelloDrone(Tello):
                 self.rev_on = not self.rev_on
                 print("revolution on: ",self.rev_on)
 
+            self.manual_flag = False
+            for val in [self.lr, self.fb, self.ud, self.yv]:
+                if val != 0:
+                    self.manual_flag = True
+                    break
+
             # # flip 
             # if keyboard.is_pressed("j"): self.flip_left(); time.sleep(1)
             # elif keyboard.is_pressed("l"): self.flip_right(); time.sleep(1)
@@ -142,6 +150,9 @@ class TelloDrone(Tello):
     def drone_frame(self):
         pTime = 0
         while True:
+            if self.manual_flag: 
+                continue
+            
             pTime = round(time.time(), 3)
             image = self.cap.frame
             results = self.model(image)
