@@ -37,9 +37,9 @@ class TelloDrone(Tello):
         self.rev_speed = 0
         self.keyboard_thread = Thread(target=self.getKeyboardInput)
         self.keyboard_thread.start()
-        self.pid_fb = PID(0.105, 0.001, 0.05, setpoint=0)
-        self.pid_ud = PID(0.1, 0.001, 0.05, setpoint=0)
-        self.pid_yv = PID(0.11, 0.001, 0.05, setpoint=0)
+        self.pid_fb = PID(1, 0.1, 0.3, setpoint=0)
+        self.pid_ud = PID(0.11, 0.001, 0.1, setpoint=0)
+        self.pid_yv = PID(0.10, 0.01, 0.07, setpoint=0)
         self.manual_flag = False
         self.update_width_flag = False
         self.target_width = 0
@@ -74,8 +74,7 @@ class TelloDrone(Tello):
 
             if keyboard.is_pressed("UP"): 
                 self.fb = speed
-                self.update_width_flag = True
-                
+                self.update_width_flag = True 
             elif keyboard.is_pressed("DOWN"): 
                 self.fb = -speed
                 self.update_width_flag = True
@@ -86,7 +85,7 @@ class TelloDrone(Tello):
             if keyboard.is_pressed("a"): self.yv = -speed
             elif keyboard.is_pressed("d"): self.yv = speed
             
-            if keyboard.is_pressed("q"): 
+            if keyboard.is_pressed("9"): 
                 self.land()
                 break
             
@@ -151,16 +150,18 @@ class TelloDrone(Tello):
 
     def drone_frame(self):
         periods = []
-        period_window_size = 5
+        period_window_size = 10
         prev_time = 0
+        fps = 0
         while True:
-            print(periods)
+            
             image = self.cap.frame
             results = self.model(image)
             periods.append(round(time.time()-prev_time,3)) 
             prev_time = time.time()
-            if(len(periods) > period_window_size): 
-                periods.pop(0)
+            if(len(periods) == period_window_size): 
+                fps = 1 / (sum(periods) / len(periods))
+                periods.clear()
 
             if not self.manual_flag:
                 self.detections = results.xywh[0].cpu().numpy()
@@ -173,12 +174,13 @@ class TelloDrone(Tello):
                     label = f"{results.names[int(class_id)]} {confidence:.2f}"
                     if(class_id == self.lock_class_id):
                         if(self.update_width_flag):
-                            self.update_width_flag = False
                             self.target_width = width
+                            self.update_width_flag = False
                         ud_dif = y_center - self.frame_center[1]
                         fb_dif = width - self.target_width
                         yv_dif = x_center - self.frame_center[0]
                         self.adj_pose(ud_dif, fb_dif, yv_dif)
+                        # print(self.update_width_flag, self.target_width, width, fb_dif)
                         if(self.fb>0):
                             cv2.circle(image, self.frame_center, self.fb, (0, 255, 255), 2)
                         else:
@@ -215,7 +217,6 @@ class TelloDrone(Tello):
                         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                         cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
-            fps = 1 / (sum(periods) / len(periods))
             cv2.putText(image, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             cv2.imshow('Detection Result', image)
             self.send_rc_control(self.lr, self.fb, self.ud, self.yv)
