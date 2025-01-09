@@ -150,13 +150,19 @@ class TelloDrone(Tello):
             elif val < -self.limit: val = -self.limit
 
     def drone_frame(self):
-        pTime = 0
+        periods = []
+        period_window_size = 5
+        prev_time = 0
         while True:
+            print(periods)
             image = self.cap.frame
             results = self.model(image)
+            periods.append(round(time.time()-prev_time,3)) 
+            prev_time = time.time()
+            if(len(periods) > period_window_size): 
+                periods.pop(0)
+
             if not self.manual_flag:
-                pTime = round(time.time(), 3)
-                
                 self.detections = results.xywh[0].cpu().numpy()
                 for det in self.detections:
                     x_center, y_center, width, height, confidence, class_id = det
@@ -183,7 +189,7 @@ class TelloDrone(Tello):
                         cv2.circle(image, (int(x_center), int(y_center)), 2, (255, 0, 0), 2)
                         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                         cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                        
+
                         bounding_box = [
                             round(float(x_center), 3),
                             round(float(y_center), 3),
@@ -197,7 +203,7 @@ class TelloDrone(Tello):
                         ]
                         with open(self.log_file_path, "a") as log_file:
                             log_message = (
-                                f"Time: {pTime};"
+                                f"Time: {prev_time};"
                                 f"bat: {str(self.get_battery())};"
                                 f"{str(bounding_box)};"
                                 f"{str(differences)};"
@@ -209,7 +215,8 @@ class TelloDrone(Tello):
                         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                         cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 cv2.circle(image, self.frame_center, 2, (255, 255, 255), 2)
-            
+            fps = 1 / (sum(periods) / len(periods))
+            cv2.putText(image, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             cv2.imshow('Detection Result', image)
             self.send_rc_control(self.lr, self.fb, self.ud, self.yv)
             # A argument "self" was added to mouse_callback function so parameter has to be None
